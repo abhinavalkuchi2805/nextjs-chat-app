@@ -16,25 +16,25 @@ export interface ChatUIConfig {
   components: {
     /** Show/hide the chat header with stats */
     header: boolean;
-    
+
     /** Show/hide the history sidebar */
     sidebar: boolean;
-    
+
     /** Show/hide upload status messages */
     uploadStatus: boolean;
-    
+
     /** Show/hide loading bar indicator */
     loadingBar: boolean;
-    
+
     /** Show/hide suggested queries below input */
     suggestedQueries: boolean;
-    
+
     /** Show/hide model selector dropdown */
     modelSelector: boolean;
-    
+
     /** Show/hide file upload button */
     fileUpload: boolean;
-    
+
     /** Show/hide typing indicator for AI responses */
     typingIndicator: boolean;
   };
@@ -43,13 +43,13 @@ export interface ChatUIConfig {
   messages: {
     /** Show/hide user and bot avatars */
     avatars: boolean;
-    
+
     /** Show/hide message timestamps */
     timestamps: boolean;
-    
+
     /** Enable markdown rendering in messages */
     markdown: boolean;
-    
+
     /** Show welcome message on new chat */
     welcomeMessage: boolean;
   };
@@ -58,13 +58,13 @@ export interface ChatUIConfig {
   features: {
     /** Enable conversation history persistence */
     conversationHistory: boolean;
-    
+
     /** Allow creating new conversations */
     newConversation: boolean;
-    
+
     /** Allow deleting conversations */
     deleteConversation: boolean;
-    
+
     /** Enable stats display in header */
     stats: boolean;
   };
@@ -86,29 +86,29 @@ export type ChatUIConfigPartial = DeepPartial<ChatUIConfig>;
 export const chatUIConfig: ChatUIConfig = {
   components: {
     header: true,
-    sidebar: true,
+    sidebar: false,
     uploadStatus: true,
     loadingBar: true,
     suggestedQueries: true,
     modelSelector: true,
-    fileUpload: true,
+    fileUpload: false,
     typingIndicator: true,
   },
-  
+
   messages: {
     avatars: true,
     timestamps: true,
     markdown: true,
     welcomeMessage: true,
   },
-  
+
   features: {
     conversationHistory: true,
     newConversation: true,
     deleteConversation: true,
-    stats: true,
+    stats: false,
   },
-  
+
   theme: {
     themeSwitcher: true,
   },

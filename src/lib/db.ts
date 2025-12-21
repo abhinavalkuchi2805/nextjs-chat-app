@@ -32,6 +32,51 @@ export async function initDB(): Promise<void> {
     // Enable pgvector extension
     await pool.query('CREATE EXTENSION IF NOT EXISTS vector');
 
+    // Create users table for authentication
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password_hash VARCHAR(255) NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    // Create sessions table for managing user sessions
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS sessions (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        token TEXT NOT NULL,
+        expires_at TIMESTAMP NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    // Create conversations table for chat history
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS conversations (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        title VARCHAR(255) NOT NULL DEFAULT 'New Conversation',
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    // Create messages table for conversation messages
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS messages (
+        id SERIAL PRIMARY KEY,
+        conversation_id INTEGER NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+        role VARCHAR(20) NOT NULL CHECK (role IN ('user', 'assistant')),
+        content TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
     // Create main table if not exists
     await pool.query(`
       CREATE TABLE IF NOT EXISTS purchase_embeddings (
@@ -44,6 +89,7 @@ export async function initDB(): Promise<void> {
         created_at TIMESTAMP DEFAULT NOW()
       )
     `);
+
 
     // Create query logs table for analytics
     await pool.query(`
@@ -67,8 +113,35 @@ export async function initDB(): Promise<void> {
   }
 }
 
+
 async function createOptimizedIndexes(pool: Pool): Promise<void> {
   const indexQueries = [
+    // Auth table indexes
+    `CREATE INDEX IF NOT EXISTS idx_users_email 
+     ON users(email)`,
+
+    `CREATE INDEX IF NOT EXISTS idx_sessions_token 
+     ON sessions(token)`,
+
+    `CREATE INDEX IF NOT EXISTS idx_sessions_user_id 
+     ON sessions(user_id)`,
+
+    `CREATE INDEX IF NOT EXISTS idx_sessions_expires_at 
+     ON sessions(expires_at)`,
+
+    // Chat history indexes
+    `CREATE INDEX IF NOT EXISTS idx_conversations_user_id 
+     ON conversations(user_id)`,
+
+    `CREATE INDEX IF NOT EXISTS idx_conversations_updated_at 
+     ON conversations(updated_at DESC)`,
+
+    `CREATE INDEX IF NOT EXISTS idx_messages_conversation_id 
+     ON messages(conversation_id)`,
+
+    `CREATE INDEX IF NOT EXISTS idx_messages_created_at 
+     ON messages(created_at)`,
+
     // Vector similarity index
     // Drop old IVFFlat index if it exists (for migration)
     `DROP INDEX IF EXISTS idx_purchase_embeddings_vector`,

@@ -3,6 +3,7 @@
 import { useRef } from 'react';
 import { Send, Paperclip } from 'lucide-react';
 import { SuggestedQueries } from './SuggestedQueries';
+import { SuggestedQuestions } from './SuggestedQuestions';
 import { ModelSelector, AIProvider } from './ModelSelector';
 
 interface ChatInputProps {
@@ -10,6 +11,7 @@ interface ChatInputProps {
   loading: boolean;
   showSuggestions: boolean;
   selectedProvider: AIProvider;
+  lastAIMessage?: string;
   onInputChange: (value: string) => void;
   onSend: () => void;
   onFileSelect?: (file: File | null) => void;
@@ -22,6 +24,7 @@ export function ChatInput({
   loading,
   showSuggestions,
   selectedProvider,
+  lastAIMessage,
   onInputChange,
   onSend,
   onFileSelect,
@@ -37,6 +40,11 @@ export function ChatInput({
     }
   };
 
+  const handleSuggestionClick = (question: string) => {
+    onSuggestionSelect(question);
+    onInputChange(question);
+  };
+
   return (
     <div className="p-4 sticky bottom-0 z-20">
       <div className="max-w-6xl mx-auto">
@@ -44,20 +52,28 @@ export function ChatInput({
         <div className="bg-[var(--surface-elevated)] border border-[var(--glass-border)] rounded-2xl
                         focus-within:ring-2 focus-within:ring-[var(--focus-ring)] focus-within:border-[var(--btn-primary-bg)]/50
                         transition-all duration-200 shadow-lg relative">
-          
-          {/* Suggested Queries */}
+
+          {/* AI-Generated Suggested Questions (from last response) */}
+          <SuggestedQuestions
+            lastMessage={lastAIMessage || ''}
+            onSelect={handleSuggestionClick}
+            visible={!inputText.trim() && !loading}
+          />
+
+
+          {/* Initial Suggested Queries (when no messages) */}
           <SuggestedQueries onSelect={onSuggestionSelect} visible={showSuggestions} />
-          
+
           {/* Input row */}
           <div className="flex items-end gap-2 p-2">
             {/* Model Selector */}
             {onProviderChange && (
-              <ModelSelector 
+              <ModelSelector
                 selectedProvider={selectedProvider}
                 onProviderChange={onProviderChange}
               />
             )}
-            
+
             {/* Upload button */}
             {onFileSelect && (
               <>
@@ -81,7 +97,7 @@ export function ChatInput({
                 </button>
               </>
             )}
-            
+
             {/* Textarea */}
             <textarea
               value={inputText}
@@ -93,22 +109,21 @@ export function ChatInput({
                          min-h-[60px] max-h-[200px] py-3"
               rows={2}
             />
-            
+
             {/* Send button */}
             <button
               onClick={onSend}
               disabled={!inputText.trim() || loading}
-              className={`flex items-center justify-center w-9 h-9 rounded-lg transition-all duration-200 flex-shrink-0 cursor-pointer ${
-                inputText.trim() && !loading
-                  ? 'text-[var(--btn-primary-text)] bg-[var(--btn-primary-bg)] hover:bg-[var(--btn-primary-hover)] active:scale-95'
-                  : 'text-[var(--muted)] cursor-not-allowed'
-              }`}
+              className={`flex items-center justify-center w-9 h-9 rounded-lg transition-all duration-200 flex-shrink-0 cursor-pointer ${inputText.trim() && !loading
+                ? 'text-[var(--btn-primary-text)] bg-[var(--btn-primary-bg)] hover:bg-[var(--btn-primary-hover)] active:scale-95'
+                : 'text-[var(--muted)] cursor-not-allowed'
+                }`}
             >
               <Send className="w-4 h-4" />
             </button>
           </div>
         </div>
-        
+
         {/* Keyboard hint */}
         <div className="text-center mt-2">
           <span className="text-[10px] text-[var(--muted)]">

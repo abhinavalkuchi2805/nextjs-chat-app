@@ -3,11 +3,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ChatMessage, ChatSession } from '@/types';
 
-const STORAGE_KEY = 'chat-history';
-
-// Helper to generate unique IDs
-const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
 // Helper to generate title from first message
 const generateTitle = (messages: ChatMessage[]): string => {
   const firstUserMessage = messages.find(m => m.isUser);
@@ -18,129 +13,252 @@ const generateTitle = (messages: ChatMessage[]): string => {
   return 'New Conversation';
 };
 
-// Serialize session for storage (convert Date objects)
-const serializeSession = (session: ChatSession): string => {
-  return JSON.stringify({
-    ...session,
-    createdAt: session.createdAt.toISOString(),
-    updatedAt: session.updatedAt.toISOString(),
-    messages: session.messages.map(m => ({
-      ...m,
-      timestamp: m.timestamp.toISOString(),
-    })),
-  });
-};
-
-// Deserialize session from storage
-const deserializeSession = (data: string): ChatSession => {
-  const parsed = JSON.parse(data);
-  return {
-    ...parsed,
-    createdAt: new Date(parsed.createdAt),
-    updatedAt: new Date(parsed.updatedAt),
-    messages: parsed.messages.map((m: { timestamp: string } & Omit<ChatMessage, 'timestamp'>) => ({
-      ...m,
-      timestamp: new Date(m.timestamp),
-    })),
-  };
-};
-
 export function useHistory() {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Load sessions from localStorage on mount
+  // Load conversations from API on mount
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as string[];
-        const loadedSessions = parsed.map(deserializeSession);
-        setSessions(loadedSessions.sort((a, b) => 
-          b.updatedAt.getTime() - a.updatedAt.getTime()
-        ));
-        
-        // Set current session to most recent or create new
-        if (loadedSessions.length > 0) {
-          setCurrentSessionId(loadedSessions[0].id);
-        }
-      }
-    } catch (error) {
-      console.error('Failed to load chat history:', error);
-    }
-    setIsLoaded(true);
+    loadConversations();
   }, []);
 
-  // Save sessions to localStorage whenever they change
-  useEffect(() => {
-    if (!isLoaded) return;
+  const loadConversations = async () => {
     try {
-      const serialized = sessions.map(serializeSession);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(serialized));
-    } catch (error) {
-      console.error('Failed to save chat history:', error);
-    }
-  }, [sessions, isLoaded]);
+      setIsLoading(true);
+      const response = await fetch('/api/conversations', {
+        method: 'GET',
+        credentials: 'include',
+      });
 
-  // Get current session
+      if (!response.ok) {
+        throw new Error('Failed to load conversations');
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.conversations) {
+        // Convert API format to ChatSession format
+        const convertedSessions: ChatSession[] = data.conversations.map((conv: any) => ({
+          id: conv.id.toString(),
+          title: conv.title,
+          messages: [], // Messages loaded separately when needed
+          createdAt: new Date(conv.created_at),
+          updatedAt: new Date(conv.updated_at),
+        }));
+
+        setSessions(convertedSessions);
+
+        // Set current session to most recent
+        if (convertedSessions.length > 0) {
+          setCurrentSessionId(convertedSessions[0].id);
+        }
+      }
+
+      setIsLoaded(true);
+    } catch (err) {
+      console.error('Failed to load conversations:', err);
+      setError('Failed to load chat history');
+      setIsLoaded(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Get current session with messages
   const currentSession = sessions.find(s => s.id === currentSessionId) || null;
 
-  // Create a new session
-  const createSession = useCallback((initialMessage?: ChatMessage): ChatSession => {
-    const now = new Date();
-    const newSession: ChatSession = {
-      id: generateId(),
-      title: 'New Conversation',
-      messages: initialMessage ? [initialMessage] : [],
-      createdAt: now,
-      updatedAt: now,
-    };
-    
-    setSessions(prev => [newSession, ...prev]);
-    setCurrentSessionId(newSession.id);
-    return newSession;
+  // Load messages for a specific conversation
+  const loadConversationMessages = async (conversationId: string): Promise<ChatMessage[]> => {
+    try {
+      const response = await fetch(`/api/conversations/${conversationId}`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to load conversation');
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.conversation && data.conversation.messages) {
+        // Convert API messages to ChatMessage format
+        return data.conversation.messages.map((msg: any) => ({
+          id: msg.id.toString(),
+          text: msg.content,
+          isUser: msg.role === 'user',
+          timestamp: new Date(msg.created_at),
+        }));
+      }
+
+      return [];
+    } catch (err) {
+      console.error('Failed to load conversation messages:', err);
+      return [];
+    }
+  };
+
+  // Create a new conversation
+  const createSession = useCallback(async (initialMessage?: ChatMessage): Promise<ChatSession> => {
+    try {
+      console.log('[useHistory] Creating new conversation...');
+
+      const response = await fetch('/api/conversations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          title: 'New Conversation',
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('[useHistory] Failed to create conversation:', response.status, errorData);
+        throw new Error('Failed to create conversation');
+      }
+
+      const data = await response.json();
+      console.log('[useHistory] Conversation created:', data);
+
+      if (data.success && data.conversation) {
+        const newSession: ChatSession = {
+          id: data.conversation.id.toString(),
+          title: data.conversation.title,
+          messages: initialMessage ? [initialMessage] : [],
+          createdAt: new Date(data.conversation.created_at),
+          updatedAt: new Date(data.conversation.updated_at),
+        };
+
+        setSessions(prev => [newSession, ...prev]);
+        setCurrentSessionId(newSession.id);
+
+        console.log('[useHistory] New session created with ID:', newSession.id);
+        return newSession;
+      }
+
+      throw new Error('Invalid response from server');
+    } catch (err) {
+      console.error('[useHistory] Failed to create conversation:', err);
+      setError('Failed to create conversation');
+      throw err;
+    }
   }, []);
 
   // Update current session with new messages
-  const updateSession = useCallback((messages: ChatMessage[]) => {
-    if (!currentSessionId) return;
-    
-    setSessions(prev => prev.map(session => {
-      if (session.id === currentSessionId) {
-        return {
-          ...session,
-          messages,
-          title: generateTitle(messages),
-          updatedAt: new Date(),
-        };
+  const updateSession = useCallback(async (messages: ChatMessage[]) => {
+    if (!currentSessionId) {
+      console.warn('[useHistory] No current session ID, skipping message save');
+      return;
+    }
+
+    try {
+      // Save messages to database
+      const messagesToSave = messages.map(msg => ({
+        role: msg.isUser ? 'user' : 'assistant',
+        content: msg.text,
+      }));
+
+      console.log('[useHistory] Saving messages to conversation:', currentSessionId);
+      console.log('[useHistory] Messages to save:', messagesToSave.length);
+
+      const response = await fetch(`/api/conversations/${currentSessionId}/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          messages: messagesToSave,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+
+        // If conversation doesn't exist (404), it might be newly created and not in DB yet
+        // Skip the error and let the next save attempt handle it
+        if (response.status === 404) {
+          console.warn('[useHistory] Conversation not found in database yet, will retry on next save');
+          return;
+        }
+
+        // Log error for non-404 cases
+        console.error('[useHistory] Failed to save messages:', response.status, errorData);
+        throw new Error(`Failed to save messages: ${errorData.error || response.statusText}`);
       }
-      return session;
-    }));
+
+      const data = await response.json();
+      console.log('[useHistory] Messages saved successfully:', data);
+
+      // Update local state optimistically
+      setSessions(prev => prev.map(session => {
+        if (session.id === currentSessionId) {
+          return {
+            ...session,
+            messages,
+            title: generateTitle(messages),
+            updatedAt: new Date(),
+          };
+        }
+        return session;
+      }));
+    } catch (err) {
+      console.error('[useHistory] Failed to update conversation:', err);
+      setError('Failed to save messages');
+    }
   }, [currentSessionId]);
 
   // Delete a session
-  const deleteSession = useCallback((sessionId: string) => {
-    setSessions(prev => {
-      const filtered = prev.filter(s => s.id !== sessionId);
-      
-      // If we deleted the current session, switch to another or null
-      if (currentSessionId === sessionId) {
-        setCurrentSessionId(filtered.length > 0 ? filtered[0].id : null);
+  const deleteSession = useCallback(async (sessionId: string) => {
+    try {
+      const response = await fetch(`/api/conversations/${sessionId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete conversation');
       }
-      
-      return filtered;
-    });
+
+      setSessions(prev => {
+        const filtered = prev.filter(s => s.id !== sessionId);
+
+        // If we deleted the current session, switch to another or null
+        if (currentSessionId === sessionId) {
+          setCurrentSessionId(filtered.length > 0 ? filtered[0].id : null);
+        }
+
+        return filtered;
+      });
+    } catch (err) {
+      console.error('Failed to delete conversation:', err);
+      setError('Failed to delete conversation');
+    }
   }, [currentSessionId]);
 
   // Switch to a different session
-  const switchSession = useCallback((sessionId: string) => {
+  const switchSession = useCallback(async (sessionId: string) => {
     setCurrentSessionId(sessionId);
-  }, []);
+
+    // Load messages for this session if not already loaded
+    const session = sessions.find(s => s.id === sessionId);
+    if (session && session.messages.length === 0) {
+      const messages = await loadConversationMessages(sessionId);
+      setSessions(prev => prev.map(s =>
+        s.id === sessionId ? { ...s, messages } : s
+      ));
+    }
+  }, [sessions]);
 
   // Start a new conversation (creates new session)
-  const startNewConversation = useCallback(() => {
-    createSession();
+  const startNewConversation = useCallback(async () => {
+    await createSession();
   }, [createSession]);
 
   return {
@@ -148,10 +266,13 @@ export function useHistory() {
     currentSession,
     currentSessionId,
     isLoaded,
+    isLoading,
+    error,
     createSession,
     updateSession,
     deleteSession,
     switchSession,
     startNewConversation,
+    loadConversationMessages,
   };
 }
