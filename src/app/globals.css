@@ -12,20 +12,20 @@
   --surface: #111118;
   --surface-elevated: #1a1a24;
 
-  /* Gradient colors (Premium Violet/Pink instead of Blue) */
-  --gradient-start: #8b5cf6;
-  /* Violet-500 */
-  --gradient-mid: #d946ef;
-  /* Fuchsia-500 */
-  --gradient-end: #f43f5e;
-  /* Rose-500 */
-  --accent-gradient: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+  /* Gradient colors (User Specified: Pink -> Purple) */
+  --gradient-start: #C6426E;
+  /* Pinkish */
+  --gradient-mid: #953670;
+  /* Midpoint */
+  --gradient-end: #642B73;
+  /* Purple */
+  --accent-gradient: linear-gradient(to right, var(--gradient-start), var(--gradient-end));
 
   /* Button colors */
-  --btn-primary-bg: #8b5cf6;
-  /* Violet */
-  --btn-primary-hover: #7c3aed;
-  /* Violet-600 */
+  --btn-primary-bg: #C6426E;
+  /* Matches start */
+  --btn-primary-hover: #a3365a;
+  /* Darker Pink */
   --btn-primary-text: #ffffff;
   --btn-secondary-bg: rgba(255, 255, 255, 0.1);
   --btn-secondary-hover: rgba(255, 255, 255, 0.15);
@@ -41,9 +41,11 @@
   --glow-accent: rgba(217, 70, 239, 0.3);
 
   /* Message colors */
-  --user-bubble-from: #8b5cf6;
-  --user-bubble-via: #d946ef;
-  --user-bubble-to: #f43f5e;
+  /* Message colors */
+  /* Message colors */
+  --user-bubble-from: #C6426E;
+  --user-bubble-via: #953670;
+  --user-bubble-to: #642B73;
   --ai-bubble-bg: rgba(255, 255, 255, 0.05);
   --ai-bubble-border: rgba(255, 255, 255, 0.1);
 
@@ -61,7 +63,7 @@
 
 /* Light theme */
 .light {
-  --background: #fff0f5;
+  --background: #ffffff;
   /* Lavender mist */
   --foreground: #1a1a2e;
   --muted: #64748b;
@@ -72,17 +74,17 @@
   --surface-elevated: #fdf4ff;
 
   /* Gradient colors */
-  --gradient-start: #8b5cf6;
-  --gradient-mid: #d946ef;
-  --gradient-end: #f43f5e;
+  --gradient-start: #C6426E;
+  --gradient-mid: #953670;
+  --gradient-end: #642B73;
 
   /* Button colors */
-  --btn-primary-bg: #8b5cf6;
-  --btn-primary-hover: #7c3aed;
+  --btn-primary-bg: #C6426E;
+  --btn-primary-hover: #a3365a;
   --btn-primary-text: #ffffff;
   --btn-secondary-bg: rgba(0, 0, 0, 0.05);
   --btn-secondary-hover: rgba(0, 0, 0, 0.08);
-  --focus-ring: rgba(139, 92, 246, 0.3);
+  --focus-ring: rgba(198, 66, 110, 0.3);
 
   /* Glass effect */
   --glass-bg: rgba(255, 255, 255, 0.7);
@@ -90,13 +92,13 @@
   --glass-strong-bg: rgba(255, 255, 255, 0.9);
 
   /* Glow effects */
-  --glow-primary: rgba(139, 92, 246, 0.3);
-  --glow-accent: rgba(217, 70, 239, 0.2);
+  --glow-primary: rgba(198, 66, 110, 0.3);
+  --glow-accent: rgba(100, 43, 115, 0.2);
 
   /* Message colors */
-  --user-bubble-from: #8b5cf6;
-  --user-bubble-via: #d946ef;
-  --user-bubble-to: #f43f5e;
+  --user-bubble-from: #C6426E;
+  --user-bubble-via: #953670;
+  --user-bubble-to: #642B73;
   --ai-bubble-bg: rgba(0, 0, 0, 0.03);
   --ai-bubble-border: rgba(0, 0, 0, 0.08);
 
@@ -318,8 +320,7 @@
 }
 
 .light body {
-  background: linear-gradient(180deg, #f8f9fc 0%, #eef2ff 50%, #f8f9fc 100%);
-  background-attachment: fixed;
+  background: #ffffff;
 }
 
 /* Focus visible styles */

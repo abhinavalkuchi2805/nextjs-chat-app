@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AuthForm from '@/components/AuthForm';
-import { LogIn, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -56,8 +56,11 @@ export default function LoginPage() {
             <div className="w-full max-w-md relative z-10">
                 {/* Header */}
                 <div className="text-center mb-8 animate-fade-in-up">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl glass mb-4">
-                        <LogIn className="w-8 h-8 gradient-text" />
+                    <div className="relative group cursor-default mb-6 inline-block">
+                        <div className="w-16 h-16 rounded-2xl flex items-center justify-center animate-float bg-gradient-to-br from-[var(--gradient-start)] to-[var(--gradient-end)] shadow-lg shadow-[var(--gradient-start)]/20 group-hover:shadow-[var(--gradient-mid)]/40 transition-all duration-300 relative z-10">
+                            <Sparkles className="w-8 h-8 text-white" />
+                        </div>
+                        <div className="absolute inset-0 w-16 h-16 rounded-2xl blur-xl opacity-40 bg-[var(--gradient-start)] group-hover:opacity-60 transition-opacity duration-300"></div>
                     </div>
                     <h1 className="text-3xl font-bold mb-2">
                         Welcome Back

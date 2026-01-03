@@ -11,6 +11,7 @@ interface SuggestedQuestionsProps {
 
 export function SuggestedQuestions({ lastMessage, onSelect, visible }: SuggestedQuestionsProps) {
     const [questions, setQuestions] = useState<string[]>([]);
+    // Always show arrows on mobile if there are questions, or check overflow properly
     const [showArrows, setShowArrows] = useState(false);
     const lastProcessedMessage = useRef<string>('');
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -39,12 +40,14 @@ export function SuggestedQuestions({ lastMessage, onSelect, visible }: Suggested
         const checkOverflow = () => {
             if (scrollContainerRef.current) {
                 const { scrollWidth, clientWidth } = scrollContainerRef.current;
+                // Strict check - if scrollWidth is even slightly larger, show arrows
+                // Also default to true if we can't measure yet but have questions (for safety on mobile)
                 setShowArrows(scrollWidth > clientWidth);
             }
         };
 
         // Little delay to ensure DOM is updated
-        setTimeout(checkOverflow, 0);
+        setTimeout(checkOverflow, 100);
 
         window.addEventListener('resize', checkOverflow);
         return () => window.removeEventListener('resize', checkOverflow);
@@ -80,8 +83,9 @@ export function SuggestedQuestions({ lastMessage, onSelect, visible }: Suggested
 
     const scroll = (direction: 'left' | 'right') => {
         if (scrollContainerRef.current) {
-            const scrollAmount = 300;
-            scrollContainerRef.current.scrollBy({
+            const container = scrollContainerRef.current;
+            const scrollAmount = container.clientWidth * 0.8; // Scroll 80% of view width
+            container.scrollBy({
                 left: direction === 'left' ? -scrollAmount : scrollAmount,
                 behavior: 'smooth'
             });
@@ -93,33 +97,36 @@ export function SuggestedQuestions({ lastMessage, onSelect, visible }: Suggested
     }
 
     return (
-        <div className="px-4 pb-2 pt-2 border-b border-[var(--glass-border)] animate-fade-in-up bg-[var(--surface-elevated)]/30 backdrop-blur-sm">
-            <div className="flex items-center gap-2">
-                <Sparkles className="w-3.5 h-3.5 text-[var(--gradient-start)] ml-1" />
-                <span className="text-xs font-medium text-[var(--muted-foreground)] whitespace-nowrap">
-                    Try:
-                </span>
+        <div className="w-full max-w-full px-2 pb-3 pt-2 border-b border-[var(--glass-border)] animate-fade-in-up bg-[var(--surface-elevated)]/30 backdrop-blur-sm overflow-hidden">
+            <div className="flex items-center gap-2 w-full max-w-full overflow-hidden">
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <Sparkles className="w-3.5 h-3.5 text-[var(--gradient-start)]" />
+                    <span className="text-xs font-medium text-[var(--muted-foreground)] whitespace-nowrap hidden sm:inline">
+                        Try:
+                    </span>
+                </div>
 
                 {showArrows && (
                     <button
                         onClick={() => scroll('left')}
-                        className="p-1 rounded-lg hover:bg-[var(--glass-border)] text-[var(--muted-foreground)] 
-                                   hover:text-[var(--foreground)] transition-colors flex-shrink-0"
+                        className="p-1.5 rounded-full hover:bg-[var(--glass-border)] text-[var(--muted-foreground)] 
+                                   hover:text-[var(--foreground)] transition-colors flex-shrink-0 bg-[var(--surface-elevated)]
+                                   shadow-sm border border-[var(--glass-border)]/50 z-10"
                         aria-label="Scroll left"
                     >
-                        <ChevronLeft className="w-4 h-4" />
+                        <ChevronLeft className="w-3.5 h-3.5" />
                     </button>
                 )}
 
                 <div
                     ref={scrollContainerRef}
-                    className="flex gap-2 overflow-x-auto pb-1 scroll-smooth scrollbar-hide flex-1"
+                    className="flex gap-2 overflow-x-auto pb-1 scroll-smooth scrollbar-hide flex-1 w-px items-center px-1 min-w-0 max-w-full"
                 >
                     {questions.map((question, index) => (
                         <button
                             key={index}
                             onClick={() => onSelect(question)}
-                            className="whitespace-nowrap px-3 py-1 text-xs rounded-full glass 
+                            className="whitespace-nowrap px-3 py-1.5 text-xs rounded-full glass 
                                        hover:bg-[var(--glass-border)] text-[var(--foreground)] 
                                        transition-all duration-200 hover:scale-[1.02] active:scale-95 
                                        cursor-pointer border border-[var(--glass-border)] text-left flex-shrink-0 bg-opacity-20"
@@ -132,11 +139,12 @@ export function SuggestedQuestions({ lastMessage, onSelect, visible }: Suggested
                 {showArrows && (
                     <button
                         onClick={() => scroll('right')}
-                        className="p-1 rounded-lg hover:bg-[var(--glass-border)] text-[var(--muted-foreground)] 
-                                   hover:text-[var(--foreground)] transition-colors flex-shrink-0"
+                        className="p-1.5 rounded-full hover:bg-[var(--glass-border)] text-[var(--muted-foreground)] 
+                                   hover:text-[var(--foreground)] transition-colors flex-shrink-0 bg-[var(--surface-elevated)]
+                                   shadow-sm border border-[var(--glass-border)]/50 z-10"
                         aria-label="Scroll right"
                     >
-                        <ChevronRight className="w-4 h-4" />
+                        <ChevronRight className="w-3.5 h-3.5" />
                     </button>
                 )}
             </div>
