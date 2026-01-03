@@ -334,7 +334,8 @@ export default function ChatUI({ config: customConfig }: ChatUIProps = {}) {
           <ChatHeader
             stats={stats}
             sidebarOpen={sidebarOpen}
-            onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+            onToggleSidebar={config.components.sidebar ? () => setSidebarOpen(!sidebarOpen) : undefined}
+            showThemeToggle={config.theme.themeSwitcher}
             onNewChat={!(displayMessages.length === 0 || (displayMessages.length === 1 && displayMessages[0].id === 'welcome')) ? () => {
               startNewConversation();
               setMessages(config.messages.welcomeMessage ? [{ id: 'welcome', role: 'assistant', content: createWelcomeMessage().text, createdAt: new Date(0) }] as any : []);

@@ -12,6 +12,7 @@ interface ChatHeaderProps {
   sidebarOpen: boolean;
   onToggleSidebar?: () => void;
   onNewChat?: () => void;
+  showThemeToggle?: boolean;
 }
 
 export function ChatHeader({
@@ -19,6 +20,7 @@ export function ChatHeader({
   sidebarOpen,
   onToggleSidebar,
   onNewChat,
+  showThemeToggle = true,
 }: ChatHeaderProps) {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -116,7 +118,7 @@ export function ChatHeader({
               <span className="hidden sm:inline">New Chat</span>
             </button>
           )}
-          <ThemeToggle />
+          {showThemeToggle && <ThemeToggle />}
 
           {/* User Menu */}
           {user && (

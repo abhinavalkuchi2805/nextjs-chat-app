@@ -86,7 +86,7 @@ export type ChatUIConfigPartial = DeepPartial<ChatUIConfig>;
 export const chatUIConfig: ChatUIConfig = {
   components: {
     header: true,
-    sidebar: true,
+    sidebar: false,
     uploadStatus: true,
     loadingBar: true,
     suggestedQueries: true,
@@ -110,7 +110,7 @@ export const chatUIConfig: ChatUIConfig = {
   },
 
   theme: {
-    themeSwitcher: true,
+    themeSwitcher: false,
   },
 };
 
